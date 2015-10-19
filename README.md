@@ -19,7 +19,9 @@ As examples, Vyom provides the following existing algebras -
 7. Unit type - ()
 8. Tuples
 9. Lists
-5. Conditional (if-then-else)
+10. Conditional (if-then-else)
+
+Look at the included [sample application](app/) for information on how to use them.
 
 ## TODO
 

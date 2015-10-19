@@ -1,0 +1,32 @@
+# Misc
+*~
+*.o
+*.hi
+.bak
+*/tmp/*
+_darcs
+.ignore
+*.sqlite3
+*.aes
+delme*
+*log
+tags
+
+# Leksah
+*.lkshw
+*.lkshs
+
+# Cabal
+dist
+.cabal-sandbox
+cabal.sandbox.config
+
+# Stack
+.stack-work
+dist-stack
+
+# IntelliJ Idea
+.idea/workspace.xml
+
+# TAGS
+TAGS

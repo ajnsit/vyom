@@ -36,27 +36,29 @@ deserialise _ _ (Node "Int" [Leaf i]) _
 deserialise _ _ (Node "Int" es) _ = Left $ "Invalid number of arguments, expected 1, found " ++ show (length es)
 
 deserialise _ self (Node "Add" [e1,e2]) env = do
-  ii1@(Dynamic t1 _) <- self e1 env
-  i1 <- maybeToEither ("Invalid type of argument, expected Int, found " ++ show t1) $ asInt ii1
-  ii2@(Dynamic t2 _) <- self e2 env
-  i2 <- maybeToEither ("Invalid type of argument, expected Int, found " ++ show t2) $ asInt ii2
+  i1 <- getInt self e1 env
+  i2 <- getInt self e2 env
   return $ Dynamic tint $ add i1 i2
 deserialise _ _ (Node "Add" es) _ = Left $ "Invalid number of arguments, expected 2, found " ++ show (length es)
 
 deserialise _ self (Node "Mul" [e1,e2]) env = do
-  ii1@(Dynamic t1 _) <- self e1 env
-  i1 <- maybeToEither ("Invalid type of argument, expected Int, found " ++ show t1) $ asInt ii1
-  ii2@(Dynamic t2 _) <- self e2 env
-  i2 <- maybeToEither ("Invalid type of argument, expected Int, found " ++ show t2) $ asInt ii2
+  i1 <- getInt self e1 env
+  i2 <- getInt self e2 env
   return $ Dynamic tint $ mul i1 i2
 deserialise _ _ (Node "Mul" es) _ = Left $ "Invalid number of arguments, expected 2, found " ++ show (length es)
 
 deserialise _ self (Node "Gte" [e1,e2]) env = do
-  ii1@(Dynamic t1 _) <- self e1 env
-  i1 <- maybeToEither ("Invalid type of argument, expected Int, found " ++ show t1) $ asInt ii1
-  ii2@(Dynamic t2 _) <- self e2 env
-  i2 <- maybeToEither ("Invalid type of argument, expected Int, found " ++ show t2) $ asInt ii2
+  i1 <- getInt self e1 env
+  i2 <- getInt self e2 env
   return $ Dynamic tbool $ gte i1 i2
 deserialise _ _ (Node "Gte" es) _ = Left $ "Invalid number of arguments, expected 2, found " ++ show (length es)
 
 deserialise old self e env = old self e env
+
+-- Private
+getInt
+  :: (exp -> env -> Either [Char] (Dynamic r))
+  -> exp -> env -> Either [Char] (r Int)
+getInt deser e env = do
+  i@(Dynamic t d) <- deser e env
+  maybeToEither ("invalid type of argument, expected bool, found " ++ show t) $ asInt i

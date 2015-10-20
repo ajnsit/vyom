@@ -6,6 +6,36 @@ An Algebra is a self contained unit that defines values, and the operations supp
 
 It is also possible to take an object term written in one DSL and run it with another DSL as long as this DSL extends the previous one. This can even be on a remote system, i.e. serialise a compiled language term and send it to another machine, deserialise it and run it in a different DSL.
   
+## Sample usage
+
+```haskell
+-- Let's define a DSL with functions, ints, and booleans only
+type Sym r =
+  ( IntSym  r
+  , BoolSym r
+  , LamSym  r
+  , AppSym  r
+  )
+
+-- A Sample term
+-- sampleFunc 10
+sample :: Sym r => r () Bool
+sample = sampleFunc `app` (int 10)
+
+-- A sample function
+-- \x -> x + 5 > 14
+sampleFunc :: Sym r => r () (Int -> Bool)
+sampleFunc = tint `lam` gte (add z (int 5)) (int 14)
+
+-- Pretty print
+ghci> pretty sample
+((\x0 -> ((x0 + 5) >= 14))  10)
+-- Eval
+ghci> run sample ()
+True
+```
+
+
 ## Examples
 
 As examples, Vyom provides the following existing algebras -

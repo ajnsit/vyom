@@ -61,15 +61,15 @@ type Sym r =
 type DSL rtenv a = forall r. Sym r => r rtenv a
 
 -- This gives us the following automatically -
---   pretty :: Term env a -> String
---   run :: Term env a -> env -> ErrorOr a
---   serialise :: Term env a -> ExprU
+--   pretty :: DSL env a -> String
+--   run :: DSL env a -> env -> ErrorOr a
+--   serialise :: DSL env a -> ExprU
 
 -- Typed deserialisation
 -- This currently can't be derived automatically
 -- Layer the individual deserialisers
 -- Effectively:
---   deserialise :: TypQ a -> env -> ExprU -> ErrorOr (Term rtenv a)
+--   deserialise :: TypQ a -> env -> ExprU -> ErrorOr (DSL rtenv a)
 --   Using it in that manner poses no problems
 --   But we can't write that signature as-is due to RankN typing issues
 deserialise :: Sym r => Deserialiser r

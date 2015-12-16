@@ -26,21 +26,18 @@ type Deserialiser r = forall a e. Var r e => TypQ a -> e -> ExprU -> ErrorOr (r 
 type ExtensibleDeserialiser r = CPSDeserialiser r -> CPSDeserialiser r
 
 -- Compose Multiple ExtensibleDeserialisers together
-deserialiseWith :: [ExtensibleDeserialiser r] -> Deserialiser r
-deserialiseWith = deserialiseWith'
+deserialiseWith :: forall r. [ExtensibleDeserialiser r] -> Deserialiser r
+deserialiseWith es tqb env e = do
+  Dynamic tqa d <- go e env
+  case gcast tqa tqb d of
+    Nothing -> fail "Invalid types"
+    Just t -> return t
   where
-    deserialiseWith' :: forall r. [ExtensibleDeserialiser r] -> Deserialiser r
-    deserialiseWith' es tqb env e = do
-      Dynamic tqa d <- go e env
-      case gcast tqa tqb d of
-        Nothing -> fail "Invalid types"
-        Just t -> return t
-      where
-        go :: DynDeserialiser r
-        go = go' es go
-        go' :: [ExtensibleDeserialiser r'] -> CPSDeserialiser r'
-        go' [] = noRead
-        go' (d:ds) = d (go' ds)
+    go :: DynDeserialiser r
+    go = go' es go
+    go' :: [ExtensibleDeserialiser r'] -> CPSDeserialiser r'
+    go' [] = noRead
+    go' (d:ds) = d (go' ds)
 
 
 -- Private --------------------------------------------------------------------

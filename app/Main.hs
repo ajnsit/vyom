@@ -5,7 +5,7 @@ import Vyom
 import DSL
 
 main :: IO ()
-main = test tint (sample $ sumInts `app` ints)
+main = test tint (sample $ sumInts #$ ints)
 
 -- A simple test
 -- take a DSL term
@@ -36,12 +36,12 @@ roundTrip typ term = case deserialise typ () (serialise term) of
 --   where
 --     f x y = x + y
 sample :: DSL env Int -> DSL env Int
-sample anInt = g `app` anInt
+sample anInt = g #$ anInt
   where
     f :: DSL env (Int -> Int -> Int)
-    f = lam tint (lam tint (add (s z) z))
+    f = tint #\ tint #\ z #+ s z
     g :: DSL env (Int -> Int)
-    g = lam tint (app (app f z) z)
+    g = tint #\ (f #$ z) #$ z
 
 -- A function that sums all elements of a [Int]
 -- sumInts l = if (isEmpty l) then 0 else (car l + sumInts (cdr l))
@@ -50,10 +50,10 @@ sumInts :: DSL env ([Int] -> Int)
 sumInts = fix typ sumIntsCPS
   where
     typ = tarr (tlist tint) tint
-    sumIntsCPS = lam (tlist tint) $
+    sumIntsCPS = tlist tint #\
       let ls   = z
           self = s z
-      in cond (isEmpty ls) (int 0) (add (car ls) (app self (cdr ls)))
+      in cond (isEmpty ls) (int 0) (car ls #+ self #$ cdr ls)
 
 -- Sample int list
 -- [3,2,1]

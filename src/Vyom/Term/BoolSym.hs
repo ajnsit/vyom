@@ -10,6 +10,14 @@ class BoolSym r where
   orrb :: r h Bool -> r h Bool -> r h Bool
   negb :: r h Bool -> r h Bool
 
+-- Helpful synonyms
+infixl 3 #&
+infixl 2 #|
+(#&) :: BoolSym r => r h Bool -> r h Bool -> r h Bool
+a #& b = andb a b
+(#|) :: BoolSym r => r h Bool -> r h Bool -> r h Bool
+a #| b = orrb a b
+
 instance BoolSym Run where
   bool = rop0
   andb = rop2 (&&)

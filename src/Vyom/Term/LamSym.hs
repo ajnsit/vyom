@@ -16,6 +16,11 @@ class LamSym r where
   -- TODO: Implement type inference
   lam :: TypQ a -> r (a,h) b -> r h (a -> b)
 
+-- Helpful synonyms
+infixr 0 #\
+(#\) :: LamSym r => TypQ a -> r (a,h) b -> r h (a -> b)
+f #\ a = lam f a
+
 instance LamSym Run where
   z     = Run fst
   s v   = Run $ run v . snd

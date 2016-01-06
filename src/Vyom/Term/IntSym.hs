@@ -10,6 +10,17 @@ class IntSym r where
   mul  :: r h Int -> r h Int -> r h Int
   gte  :: r h Int -> r h Int -> r h Bool
 
+-- Helpful synonyms
+infixl 4 #>=
+infixl 6 #+
+infixl 7 #*
+(#+) :: IntSym r => r h Int -> r h Int -> r h Int
+a #+ b = add a b
+(#*) :: IntSym r => r h Int -> r h Int -> r h Int
+a #* b = mul a b
+(#>=) :: IntSym r => r h Int -> r h Int -> r h Bool
+a #>= b = gte a b
+
 instance IntSym Run where
   int = rop0
   add = rop2 (+)

@@ -41,7 +41,7 @@ sample anInt = g #$ anInt
     f :: DSL env (Int -> Int -> Int)
     f = tint #=> tint #=> v0 #+ v1
     g :: DSL env (Int -> Int)
-    g = tint #=> (f #$ v0) #$ v0
+    g = tint #=> f #$ v0 #$ v0
 
 -- A function that sums all elements of a [Int]
 -- sumInts l = if (isEmpty l) then 0 else (car l + sumInts (cdr l))

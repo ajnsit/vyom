@@ -8,7 +8,7 @@ class AppSym r where
   app :: r h (a -> b) -> r h a -> r h b
 
 -- Helpful synonyms
-infixr 9 #$
+infixl 9 #$
 (#$) :: AppSym r => r h (a -> b) -> r h a -> r h b
 f #$ a = app f a
 

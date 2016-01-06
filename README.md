@@ -20,12 +20,12 @@ type Sym r =
 -- A Sample term
 -- sampleFunc 10
 sample :: Sym r => r () Bool
-sample = sampleFunc `app` (int 10)
+sample = sampleFunc #$ int 10
 
 -- A sample function
--- \x -> x + 5 > 14
+-- \x -> x + 5 >= 14
 sampleFunc :: Sym r => r () (Int -> Bool)
-sampleFunc = tint `lam` gte (add z (int 5)) (int 14)
+sampleFunc = tint #\ (z #+ int 5) #>= (int 14)
 
 -- Pretty print
 ghci> pretty sample

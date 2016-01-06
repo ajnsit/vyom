@@ -25,7 +25,7 @@ sample = sampleFunc #$ int 10
 -- A sample function
 -- \x -> x + 5 >= 14
 sampleFunc :: Sym r => r () (Int -> Bool)
-sampleFunc = tint #=> (z #+ int 5) #>= (int 14)
+sampleFunc = tint #=> (v0 #+ int 5) #>= (int 14)
 
 -- Pretty print
 ghci> pretty sample

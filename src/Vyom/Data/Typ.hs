@@ -17,19 +17,19 @@ import Vyom.Data.ErrorOr
 
 import Data.Binary
 
-class TSym r where
+class TSym q where
   -- Our specific supported datatypes
   -- These *should* match those in various *Sym.hs
-  ttint :: r Int
-  ttbool :: r Bool
-  ttstring :: r String
-  ttunit :: r ()
-  ttarr :: r a -> r b -> r (a -> b)
-  tttuple :: r a -> r b -> r (a,b)
-  ttlist :: r a -> r [a]
+  ttint :: q Int
+  ttbool :: q Bool
+  ttstring :: q String
+  ttunit :: q ()
+  ttarr :: q a -> q b -> q (a -> b)
+  tttuple :: q a -> q b -> q (a,b)
+  ttlist :: q a -> q [a]
 
 -- Abstract Type, constructor is not exported
-newtype TypQ a = TypQ { unTypQ :: forall r . TSym r => r a }
+newtype TypQ a = TypQ { unTypQ :: forall q . TSym q => q a }
 
 instance TSym TypQ where
   ttunit = TypQ ttunit

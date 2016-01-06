@@ -39,9 +39,9 @@ sample :: DSL env Int -> DSL env Int
 sample anInt = g #$ anInt
   where
     f :: DSL env (Int -> Int -> Int)
-    f = tint #\ tint #\ z #+ s z
+    f = tint #=> tint #=> z #+ s z
     g :: DSL env (Int -> Int)
-    g = tint #\ (f #$ z) #$ z
+    g = tint #=> (f #$ z) #$ z
 
 -- A function that sums all elements of a [Int]
 -- sumInts l = if (isEmpty l) then 0 else (car l + sumInts (cdr l))
@@ -50,7 +50,7 @@ sumInts :: DSL env ([Int] -> Int)
 sumInts = fix typ sumIntsCPS
   where
     typ = tarr (tlist tint) tint
-    sumIntsCPS = tlist tint #\
+    sumIntsCPS = tlist tint #=>
       let ls   = z
           self = s z
       in cond (isEmpty ls) (int 0) (car ls #+ self #$ cdr ls)

@@ -19,7 +19,7 @@ library
                    , Vyom.Term.UnitSym
                    , Vyom.Term.IntSym
                    , Vyom.Term.BoolSym
-                   , Vyom.Term.StringSym
+                   , Vyom.Term.CharSym
                    , Vyom.Term.TupleSym
                    , Vyom.Term.ListSym
                    , Vyom.Term.CondSym

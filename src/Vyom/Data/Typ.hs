@@ -1,8 +1,8 @@
 {-# LANGUAGE RankNTypes, GADTs, TypeOperators #-}
 module Vyom.Data.Typ
 ( Typ(..), typToExp, expToTyp
-, Dynamic(..), asInt, asBool, asString, asUnit
-, TypQ, unTypQ, tunit, tint, tbool, tstring, tarr, (~~>), ttuple, tlist
+, Dynamic(..), asInt, asBool, asChar, asUnit
+, TypQ, unTypQ, tunit, tint, tbool, tchar, tarr, (~~>), ttuple, tlist
 , eqT, cast, gcast, AsArrow(..), AsTuple(..), AsList(..)
 , eqTrans1, eqTrans2, eqCast, eqCast2, eqCast3
 , module Data.Type.Equality
@@ -22,7 +22,7 @@ class TSym q where
   -- These *should* match those in various *Sym.hs
   ttint :: q Int
   ttbool :: q Bool
-  ttstring :: q String
+  ttchar :: q Char
   ttunit :: q ()
   ttarr :: q a -> q b -> q (a -> b)
   tttuple :: q a -> q b -> q (a,b)
@@ -35,7 +35,7 @@ instance TSym TypQ where
   ttunit = TypQ ttunit
   ttint = TypQ ttint
   ttbool = TypQ ttbool
-  ttstring = TypQ ttstring
+  ttchar = TypQ ttchar
   ttarr a b = TypQ $ ttarr (unTypQ a) (unTypQ b)
   tttuple a b = TypQ $ tttuple (unTypQ a) (unTypQ b)
   ttlist a = TypQ $ ttlist (unTypQ a)
@@ -47,8 +47,8 @@ tint :: TypQ Int
 tint = ttint
 tbool :: TypQ Bool
 tbool = ttbool
-tstring :: TypQ String
-tstring = ttstring
+tchar :: TypQ Char
+tchar = ttchar
 tarr, (~~>) :: TypQ a -> TypQ b -> TypQ (a->b)
 tarr = ttarr
 (~~>) = ttarr
@@ -70,7 +70,7 @@ data Dynamic t = forall a. Dynamic (TypQ a) (t a)
 -- Private
 newtype AsInt a = AsInt (Maybe (a :~: Int))
 newtype AsBool a = AsBool (Maybe (a :~: Bool))
-newtype AsString a = AsString (Maybe (a :~: String))
+newtype AsChar a = AsChar (Maybe (a :~: Char))
 newtype AsUnit a = AsUnit (Maybe (a :~: ()))
 
 -- Don't want to export it, but have to
@@ -94,16 +94,16 @@ asBool :: Dynamic t -> Maybe (t Bool)
 asBool (Dynamic (TypQ (AsBool Nothing)) _) = Nothing
 asBool (Dynamic (TypQ (AsBool (Just Refl))) c) = Just c
 
--- Convert a dynamic to a String if possible
-asString :: Dynamic t -> Maybe (t String)
-asString (Dynamic (TypQ (AsString Nothing)) _) = Nothing
-asString (Dynamic (TypQ (AsString (Just Refl))) c) = Just c
+-- Convert a dynamic to a Char if possible
+asChar :: Dynamic t -> Maybe (t Char)
+asChar (Dynamic (TypQ (AsChar Nothing)) _) = Nothing
+asChar (Dynamic (TypQ (AsChar (Just Refl))) c) = Just c
 
 instance TSym AsUnit where
   ttunit = AsUnit $ Just Refl
   ttint = AsUnit Nothing
   ttbool = AsUnit Nothing
-  ttstring = AsUnit Nothing
+  ttchar = AsUnit Nothing
   ttarr _ _ = AsUnit Nothing
   tttuple _ _ = AsUnit Nothing
   ttlist _ = AsUnit Nothing
@@ -112,7 +112,7 @@ instance TSym AsInt where
   ttunit = AsInt Nothing
   ttint = AsInt $ Just Refl
   ttbool = AsInt Nothing
-  ttstring = AsInt Nothing
+  ttchar = AsInt Nothing
   ttarr _ _ = AsInt Nothing
   tttuple _ _ = AsInt Nothing
   ttlist _ = AsInt Nothing
@@ -121,25 +121,25 @@ instance TSym AsBool where
   ttunit = AsBool Nothing
   ttint = AsBool Nothing
   ttbool = AsBool $ Just Refl
-  ttstring = AsBool Nothing
+  ttchar = AsBool Nothing
   ttarr _ _ = AsBool Nothing
   tttuple _ _ = AsBool Nothing
   ttlist _ = AsBool Nothing
 
-instance TSym AsString where
-  ttunit = AsString Nothing
-  ttint = AsString Nothing
-  ttbool = AsString Nothing
-  ttstring = AsString $ Just Refl
-  ttarr _ _ = AsString Nothing
-  tttuple _ _ = AsString Nothing
-  ttlist _ = AsString Nothing
+instance TSym AsChar where
+  ttunit = AsChar Nothing
+  ttint = AsChar Nothing
+  ttbool = AsChar Nothing
+  ttchar = AsChar $ Just Refl
+  ttarr _ _ = AsChar Nothing
+  tttuple _ _ = AsChar Nothing
+  ttlist _ = AsChar Nothing
 
 instance TSym AsArrow where
   ttunit = AsArrow ttunit Nothing
   ttint = AsArrow ttint Nothing
   ttbool = AsArrow ttbool Nothing
-  ttstring = AsArrow ttstring Nothing
+  ttchar = AsArrow ttchar Nothing
   ttarr (AsArrow t1 _) (AsArrow t2 _) = AsArrow (tarr t1 t2) $ Just (t1,t2,Refl)
   tttuple (AsArrow t1 _) (AsArrow t2 _) = AsArrow (tttuple t1 t2) Nothing
   ttlist (AsArrow t _) = AsArrow (ttlist t) Nothing
@@ -148,7 +148,7 @@ instance TSym AsTuple where
   ttunit = AsTuple ttunit Nothing
   ttint = AsTuple ttint Nothing
   ttbool = AsTuple ttbool Nothing
-  ttstring = AsTuple ttstring Nothing
+  ttchar = AsTuple ttchar Nothing
   ttarr (AsTuple t1 _) (AsTuple t2 _) = AsTuple (tarr t1 t2) Nothing
   tttuple (AsTuple t1 _) (AsTuple t2 _) = AsTuple (tttuple t1 t2) $ Just (t1,t2,Refl)
   ttlist (AsTuple t _) = AsTuple (ttlist t) Nothing
@@ -157,7 +157,7 @@ instance TSym AsList where
   ttunit = AsList ttunit Nothing
   ttint = AsList ttint Nothing
   ttbool = AsList ttbool Nothing
-  ttstring = AsList ttstring Nothing
+  ttchar = AsList ttchar Nothing
   ttarr (AsList t1 _) (AsList t2 _) = AsList (tarr t1 t2) Nothing
   tttuple (AsList t1 _) (AsList t2 _) = AsList (tttuple t1 t2) Nothing
   ttlist (AsList t _) = AsList (ttlist t) $ Just (t, Refl)
@@ -169,7 +169,7 @@ instance TSym SafeCast where
     ttunit = SafeCast $ \(TypQ (AsUnit castf)) -> _runCast0 castf
     ttint = SafeCast $ \(TypQ (AsInt castf)) -> _runCast0 castf
     ttbool = SafeCast $ \(TypQ (AsBool castf)) -> _runCast0 castf
-    ttstring = SafeCast $ \(TypQ (AsString castf)) -> _runCast0 castf
+    ttchar = SafeCast $ \(TypQ (AsChar castf)) -> _runCast0 castf
     ttlist (SafeCast t) =
       SafeCast $ \(TypQ (AsList _ castf)) -> _runCast1 castf t
     ttarr (SafeCast t1) (SafeCast t2) =
@@ -279,7 +279,7 @@ newtype ShowT a = ShowT String
 instance TSym ShowT where
   ttunit = ShowT "()"
   ttbool = ShowT "Bool"
-  ttstring = ShowT "String"
+  ttchar = ShowT "Char"
   ttint = ShowT "Int"
   ttarr (ShowT a) (ShowT b) = ShowT $ "(" ++ a ++ " -> " ++ b ++ ")"
   tttuple (ShowT a) (ShowT b) = ShowT $ "(" ++ a ++ ", " ++ b ++ ")"
@@ -301,7 +301,7 @@ expToTyp :: ExprU -> ErrorOr Typ
 expToTyp (Node "TUnit" [])    = return $ Typ ttunit
 expToTyp (Node "TInt" [])     = return $ Typ ttint
 expToTyp (Node "TBool" [])    = return $ Typ ttbool
-expToTyp (Node "TString" [])  = return $ Typ ttstring
+expToTyp (Node "TChar" [])  = return $ Typ ttchar
 expToTyp (Node "TArr" [e1,e2]) = do
   Typ t1 <- expToTyp e1
   Typ t2 <- expToTyp e2
@@ -322,7 +322,7 @@ instance TSym TmpExpr where
   ttunit = TmpExpr $ Node "TUnit" []
   ttint = TmpExpr $ Node "TInt" []
   ttbool = TmpExpr $ Node "TBool" []
-  ttstring = TmpExpr $ Node "TString" []
+  ttchar = TmpExpr $ Node "TChar" []
   ttarr a b = TmpExpr $ Node "TArr" [_unExpr a, _unExpr b]
   tttuple a b = TmpExpr $ Node "TTuple" [_unExpr a, _unExpr b]
   ttlist a = TmpExpr $ Node "TList" [_unExpr a]

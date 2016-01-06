@@ -5,7 +5,7 @@ module DSL
 , deserialise
 , pretty
 , run
-, module Vyom.Term.StringSym
+, module Vyom.Term.CharSym
 , module Vyom.Term.LamSym
 , module Vyom.Term.AppSym
 , module Vyom.Term.FixSym
@@ -19,7 +19,7 @@ module DSL
 
 import Vyom
 
-import Vyom.Term.StringSym hiding (deserialise)
+import Vyom.Term.CharSym hiding (deserialise)
 import Vyom.Term.LamSym hiding (deserialise)
 import Vyom.Term.AppSym hiding (deserialise)
 import Vyom.Term.FixSym hiding (deserialise)
@@ -30,7 +30,7 @@ import Vyom.Term.CondSym hiding (deserialise)
 import Vyom.Term.TupleSym hiding (deserialise)
 import Vyom.Term.ListSym hiding (deserialise)
 
-import qualified Vyom.Term.StringSym (deserialise)
+import qualified Vyom.Term.CharSym (deserialise)
 import qualified Vyom.Term.LamSym (deserialise)
 import qualified Vyom.Term.AppSym (deserialise)
 import qualified Vyom.Term.FixSym (deserialise)
@@ -48,7 +48,7 @@ type Sym r =
   , FixSym    r
   , IntSym    r
   , BoolSym   r
-  , StringSym r
+  , CharSym r
   , UnitSym   r
   , CondSym   r
   , TupleSym  r
@@ -81,7 +81,7 @@ deserialise = deserialiseWith
     , Vyom.Term.IntSym.deserialise
     , Vyom.Term.LamSym.deserialise
     , Vyom.Term.ListSym.deserialise
-    , Vyom.Term.StringSym.deserialise
+    , Vyom.Term.CharSym.deserialise
     , Vyom.Term.TupleSym.deserialise
     , Vyom.Term.UnitSym.deserialise
     ]

@@ -6,6 +6,7 @@ module Vyom.Data.Typ
 , eqT, cast, gcast, AsArrow(..), AsTuple(..), AsList(..)
 , eqTrans1, eqTrans2, eqCast, eqCast2, eqCast3
 , module Data.Type.Equality
+, SupportedType, typrep
 ) where
 
 -- This module is a bit of a ragtag collection of typing stuff
@@ -27,6 +28,25 @@ class TSym q where
   ttarr :: q a -> q b -> q (a -> b)
   tttuple :: q a -> q b -> q (a,b)
   ttlist :: q a -> q [a]
+
+-- We can get values for any supported type using "typrep"
+class SupportedType a where
+  typrep :: TSym q => q a
+
+instance SupportedType Int where
+  typrep = ttint
+instance SupportedType Bool where
+  typrep = ttbool
+instance SupportedType Char where
+  typrep = ttchar
+instance SupportedType () where
+  typrep = ttunit
+instance (SupportedType a, SupportedType b) => SupportedType (a->b) where
+  typrep = ttarr typrep typrep
+instance (SupportedType a, SupportedType b) => SupportedType (a,b) where
+  typrep = tttuple typrep typrep
+instance SupportedType a => SupportedType [a] where
+  typrep = ttlist typrep
 
 -- Abstract Type, constructor is not exported
 newtype TypQ a = TypQ { unTypQ :: forall q . TSym q => q a }

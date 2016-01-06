@@ -312,7 +312,7 @@ typToExp :: Typ -> ExprU
 typToExp (Typ t) = _tqToExp t
 
 _tqToExp :: TypQ a -> ExprU
-_tqToExp = _unExpr . unTypQ
+_tqToExp = serialise . unTypQ
 
 expToTyp :: ExprU -> ErrorOr Typ
 -- Note: We use Nodes instead of Leafs for int/bool/str so that -
@@ -335,16 +335,13 @@ expToTyp (Node "TList" [e]) = do
   return $ Typ $ ttlist t
 expToTyp e = Left $ "Bad type expression: " ++ show e
 
--- Private
-newtype TmpExpr a = TmpExpr { _unExpr :: ExprU }
-
-instance TSym TmpExpr where
-  ttunit = TmpExpr $ Node "TUnit" []
-  ttint = TmpExpr $ Node "TInt" []
-  ttbool = TmpExpr $ Node "TBool" []
-  ttchar = TmpExpr $ Node "TChar" []
-  ttarr a b = TmpExpr $ Node "TArr" [_unExpr a, _unExpr b]
-  tttuple a b = TmpExpr $ Node "TTuple" [_unExpr a, _unExpr b]
-  ttlist a = TmpExpr $ Node "TList" [_unExpr a]
+instance TSym (Expr h) where
+  ttunit = Expr $ Node "TUnit" []
+  ttint = Expr $ Node "TInt" []
+  ttbool = Expr $ Node "TBool" []
+  ttchar = Expr $ Node "TChar" []
+  ttarr a b = Expr $ Node "TArr" [serialise a, serialise b]
+  tttuple a b = Expr $ Node "TTuple" [serialise a, serialise b]
+  ttlist a = Expr $ Node "TList" [serialise a]
 -- END Private
 

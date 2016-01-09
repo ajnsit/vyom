@@ -16,11 +16,16 @@ class LamSym r where
   -- TODO: Implement type inference
   lam :: TypQ a -> r (a,h) b -> r h (a -> b)
 
+lambda :: (LamSym r, SupportedType a) => r (a,h) b -> r h (a -> b)
+lambda body = lam (argt body) body
+  where
+    argt :: SupportedType a => r (a,h) b -> TypQ a
+    argt _ = typrep
 
 -- Helpful synonyms
-infixr 0 #=>
-(#=>) :: LamSym r => TypQ a -> r (a,h) b -> r h (a -> b)
-f #=> a = lam f a
+-- infixr 0 #\
+(#\) :: (LamSym r, SupportedType a) => r (a,h) b -> r h (a -> b)
+(#\) = lambda
 v0 :: LamSym r => r (a,h) a
 v0 = z
 v1 :: LamSym r => r (any,(a,h)) a
@@ -52,10 +57,10 @@ instance LamSym Expr where
 var :: String -> Expr h a
 var name = Expr $ Node "Var" [Leaf name]
 
--- Create an ExprU with a lambda
+-- Create an ExprU with a named function
 -- The body should use `var` to refer to named variables
-lambda :: String -> TypQ a -> Expr (a,h) b -> Expr h (a -> b)
-lambda name typ body = Expr $ Node "Lam" [Leaf name, typToExp (Typ typ), serialise body]
+namedLam :: String -> TypQ a -> Expr (a,h) b -> Expr h (a -> b)
+namedLam name typ body = Expr $ Node "Lam" [Leaf name, typToExp (Typ typ), serialise body]
 -- END EXPERIMENTAL --
 
 

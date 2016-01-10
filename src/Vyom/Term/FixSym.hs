@@ -18,6 +18,12 @@ instance FixSym Pretty where
 instance FixSym Expr where
   fix t f = Expr $ Node "Fix" [typToExp (Typ t), serialise f]
 
+-- Fix which does not require being supplied the type
+recurse :: (SupportedType a, FixSym r) => r (a,h) a -> r h a
+recurse body = fix (argt body) body
+  where
+    argt :: SupportedType a => r (a,h) b -> TypQ a
+    argt _ = typrep
 
 deserialise :: (LamSym r, FixSym r) => ExtensibleDeserialiser r
 deserialise _ self (Node "Fix" [t, e]) env = do

@@ -45,15 +45,12 @@ sample anInt = g #$ anInt
 
 -- A function that sums all elements of a [Int]
 -- sumInts l = if (isEmpty l) then 0 else (car l + sumInts (cdr l))
--- We use `fix` for recursion
+-- Recursion takes a CPS'd version of the function as argument
 sumInts :: DSL env ([Int] -> Int)
-sumInts = fix typ sumIntsCPS
-  where
-    typ = tarr (tlist tint) tint
-    sumIntsCPS = lambda $
-      let ls   = v0
-          self = v1
-      in cond (isEmpty ls) (int 0) (car ls #+ self #$ cdr ls)
+sumInts = recurse $ lambda $
+   cond (isEmpty v0)
+     (int 0)
+     (car v0 #+ v1 #$ cdr v0)
 
 -- Sample int list
 -- [3,2,1]

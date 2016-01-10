@@ -10,7 +10,7 @@ It is also possible to take an object term written in one DSL and run it with an
 
 ```haskell
 -- Let's define a DSL with functions, ints, and booleans only
-type Sym r =
+type SimpleSym r =
   ( IntSym  r
   , BoolSym r
   , LamSym  r
@@ -18,14 +18,15 @@ type Sym r =
   )
 
 -- A Sample term
--- sampleFunc 10
-sample :: Sym r => r () Bool
-sample = sampleFunc #$ int 10
+-- ===> sampleFunc 10
+sample :: SimpleSym r => r () Bool
+sample = func #$ int 10
 
 -- A sample function
--- \x -> x + 5 >= 14
-sampleFunc :: Sym r => r () (Int -> Bool)
-sampleFunc = tint #=> (v0 #+ int 5) #>= (int 14)
+-- ===> \x -> x + 5 >= 14
+-- Function arguments can be referred to by using v0, v1 etc.
+func :: SimpleSym r => r () (Int -> Bool)
+func = lambda $ (v0 #+ int 5) #>= (int 14)
 
 -- Pretty print
 ghci> pretty sample
@@ -33,6 +34,40 @@ ghci> pretty sample
 -- Eval
 ghci> run sample ()
 True
+```
+
+We can easily extend this DSL in another file -
+
+```haskell
+-- Now let's add conditionals, lists, and recursion (using fix) to SimpleSym
+type MySym r =
+  ( SimpleSym  r
+  , ListSym r
+  , FixSym r
+  )
+
+-- Now we can write a function that sums up all elements of a [Int]
+-- sumInts l = if (isEmpty l) then 0 else (car l + sumInts (cdr l))
+-- Recursion takes a CPS'd version of the function as argument
+sumInts :: MySym r () ([Int] -> Int)
+sumInts = recurse $ lambda $
+   cond (isEmpty v0)
+     (int 0)
+     (car v0 #+ v1 #$ cdr v0)
+
+-- A Sample term
+-- sumInts [3,2,1]
+mySample :: MySym r => r () Int
+mySample = sumInts #$ ints
+  where
+    ints = cons (int 3) (cons (int 2) (cons (int 1) (empty tint)))
+
+-- Pretty print
+ghci> pretty mySample
+((fix ((\x1 -> (if (null x1) then 0 else ((car x1) + (x0  (cdr x1)))))))  (3 : (2 : (1 : []))))
+-- Eval
+ghci> run mySample ()
+6
 ```
 
 

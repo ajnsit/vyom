@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeApplications #-}
 module Vyom.Term.IntSym where
 
 import Vyom
@@ -42,34 +43,27 @@ instance IntSym Expr where
 
 deserialise :: IntSym r => ExtensibleDeserialiser r
 deserialise _ _ (Node "Int" [Leaf i]) _
-  | Just i' <- safeRead i = return $ Dynamic tint $ int i'
+  | Just i' <- safeRead i = return $ Dyn (typeRep @Int) $ int i'
   | otherwise = Left $ "Bad int literal " ++ i
 deserialise _ _ (Node "Int" es) _ = Left $ "Invalid number of arguments, expected 1, found " ++ show (length es)
 
 deserialise _ self (Node "Add" [e1,e2]) env = do
-  i1 <- getInt self e1 env
-  i2 <- getInt self e2 env
-  return $ Dynamic tint $ add i1 i2
+  i1 <- getVal self e1 env
+  i2 <- getVal self e2 env
+  return $ Dyn (typeRep @Int) $ add i1 i2
 deserialise _ _ (Node "Add" es) _ = Left $ "Invalid number of arguments, expected 2, found " ++ show (length es)
 
 deserialise _ self (Node "Mul" [e1,e2]) env = do
-  i1 <- getInt self e1 env
-  i2 <- getInt self e2 env
-  return $ Dynamic tint $ mul i1 i2
+  i1 <- getVal self e1 env
+  i2 <- getVal self e2 env
+  return $ Dyn (typeRep @Int) $ mul i1 i2
 deserialise _ _ (Node "Mul" es) _ = Left $ "Invalid number of arguments, expected 2, found " ++ show (length es)
 
 deserialise _ self (Node "Gte" [e1,e2]) env = do
-  i1 <- getInt self e1 env
-  i2 <- getInt self e2 env
-  return $ Dynamic tbool $ gte i1 i2
+  i1 <- getVal self e1 env
+  i2 <- getVal self e2 env
+  return $ Dyn (typeRep @Bool) $ gte i1 i2
 deserialise _ _ (Node "Gte" es) _ = Left $ "Invalid number of arguments, expected 2, found " ++ show (length es)
 
 deserialise old self e env = old self e env
 
--- Private
-getInt
-  :: (exp -> env -> Either [Char] (Dynamic r))
-  -> exp -> env -> Either [Char] (r Int)
-getInt deser e env = do
-  i@(Dynamic t d) <- deser e env
-  maybeToEither ("invalid type of argument, expected bool, found " ++ show t) $ asInt i

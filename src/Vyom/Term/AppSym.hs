@@ -1,7 +1,12 @@
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE TypeApplications #-}
 module Vyom.Term.AppSym where
 
 import Vyom
+
+import GHC.Base
+
 
 -- Functions that can be applied
 class AppSym r where
@@ -21,18 +26,19 @@ instance AppSym Pretty where
 instance AppSym Expr where
   app = eop2 "App"
 
-
 deserialise :: AppSym r => ExtensibleDeserialiser r
 deserialise _ self (Node "App" [e1, e2]) env = do
-  Dynamic t1 d1 <- self e1 env
-  Dynamic t2 d2 <- self e2 env
-  AsArrow _ arrCast <- return $ unTypQ t1
-  let errarr = fail $ "operator type is not an arrow: " ++ show t1
-  (ta,tb,equT1ab) <- maybe errarr return arrCast
-  let df = eqCast equT1ab d1
-  case gcast t2 ta d2 of
-    Just da -> return . Dynamic tb $ app df da
-    _ -> fail $ unwords ["Bad types of the application:", show t1, " and ", show t2]
+  res <- self e1 env
+  da@(Dyn ta va) <- self e2 env
+  case res of
+    df@(Dyn (Fun targ tres) vf) -> do
+      -- mkApp targ tres vf ta va
+      case (targ `eqTypeRep` ta, typeRep @Type `eqTypeRep` typeRepKind tres) of
+        (Just HRefl, Just HRefl) -> do
+          return $ Dyn tres $ app vf va
+        _ -> Left $ "Mismatched type of function argument. Expected " <> show targ <> ", found " <> show ta
+    (Dyn tactual _) -> Left $ "Type Error. Expected a function with arg " <> show ta <> ", found " <> show tactual
 deserialise _ _ (Node "App" es) _ = Left $ "Invalid number of arguments, expected 2, found " ++ show (length es)
 
 deserialise old self e env = old self e env
+

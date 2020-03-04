@@ -1,17 +1,25 @@
 {-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE GADTs #-}
 module Vyom.Term.ListSym where
 
+import Data.Kind (Type)
+
 import Vyom
+import Vyom.Data.TypeRep
 import Util (maybeToEither)
+
+import qualified Codec.Serialise as S
 
 -- Lists
 class ListSym r where
   isEmpty :: r h [a] -> r h Bool
   -- Need to pass the type of elements, because we don't support polymorphism
   -- TODO: Implement rank1 types a.k.a. polymorphism
-  empty :: TypQ a -> r h [a]
+  empty :: TypeRep a -> r h [a]
   -- The rest don't need type args
   cons :: r h a -> r h [a] -> r h [a]
+  -- TODO: Make total
   car :: r h [a] -> r h a
   cdr :: r h [a] -> r h [a]
 
@@ -31,51 +39,55 @@ instance ListSym Pretty where
 
 instance ListSym Expr where
   isEmpty = eop1 "IsEmpty"
-  empty t = eopList "Empty" [typToExp (Typ t)]
+  empty t = eopList "Empty" [serialiseTypeRep t]
   cons = eop2 "Cons"
   car = eop1 "Car"
   cdr = eop1 "Cdr"
 
-
 deserialise :: ListSym r => ExtensibleDeserialiser r
 deserialise _ self (Node "IsEmpty" [e]) env = do
-  Dynamic t d <- self e env
-  AsList _ arrCast <- return $ unTypQ t
-  let errarr = fail $ "type is not a list: " ++ show t
-  (_, equTab) <- maybe errarr return arrCast
-  let df = eqCast equTab d
-  return $ Dynamic tbool (isEmpty df)
+  Dyn t d <- self e env
+  case t of
+    App tc ta -> do
+      case (typeRep @Type `eqTypeRep` typeRepKind t, tc `eqTypeRep` typeRep @[]) of
+        (Just HRefl, Just HRefl) -> do
+          return $ Dyn typeRep (isEmpty d)
+        _ -> Left $ "Expected type: [" ++ show ta ++ "]. Found type: " ++ show t
+    _ -> Left $ "Expected type: [a]. Found type: " ++ show t
 deserialise _ _ (Node "IsEmpty" es) _ = Left $ "Invalid number of arguments, expected 1, found " ++ show (length es)
 
 deserialise _ _ (Node "Empty" [t]) _ = do
-  Typ ta <- expToTyp t
-  return $ Dynamic (tlist ta) (empty ta)
+  SomeTypeRep ta <- decode t
+  case typeRep @Type `eqTypeRep` typeRepKind ta of
+    Just HRefl -> return $ Dyn (App (typeRep @[]) ta) (empty ta)
 deserialise _ _ (Node "Empty" es) _ = Left $ "Invalid number of arguments, expected 1, found " ++ show (length es)
 
 deserialise _ self (Node "Cons" [ee, el]) env = do
-  Dynamic te de <- self ee env
-  Dynamic cdr dl <- self el env
-  AsList _ arrCast <- return $ unTypQ cdr
-  (ta, equTab) <- maybeToEither ("type is not a list: " ++ show cdr) arrCast
-  eqae <- maybeToEither ("Expected type: " ++ show te ++ " found type: " ++ show ta) $ eqT ta te
-  let dlf = eqCast (trans equTab (eqTrans1 eqae)) dl
-  return $ Dynamic (tlist te) (cons de dlf)
+  Dyn te de <- self ee env
+  Dyn tl dl <- self el env
+  case (App (typeRep @[]) te) `eqTypeRep` tl of
+    Just HRefl -> return $ Dyn tl (cons de dl)
+    _ -> Left $ "Expected type: [" ++ show te ++ "]. Found type: " ++ show tl
 deserialise _ _ (Node "Cons" es) _ = Left $ "Invalid number of arguments, expected 3, found " ++ show (length es)
 
 deserialise _ self (Node "Car" [el]) env = do
-  Dynamic cdr dl <- self el env
-  AsList _ arrCast <- return $ unTypQ cdr
-  (ta, equTab) <- maybeToEither ("type is not a list: " ++ show cdr) arrCast
-  let dlf = eqCast equTab dl
-  return $ Dynamic ta (car dlf)
+  Dyn t d <- self el env
+  case t of
+    App tc ta -> do
+      case (typeRep @Type `eqTypeRep` typeRepKind t, tc `eqTypeRep` typeRep @[]) of
+        (Just HRefl, Just HRefl) -> return $ Dyn ta (car d)
+        _ -> Left $ "Expected type: [" ++ show ta ++ "]. Found type: " ++ show t
+    _ -> Left $ "Expected type: [a]. Found type: " ++ show t
 deserialise _ _ (Node "Car" es) _ = Left $ "Invalid number of arguments, expected 1, found " ++ show (length es)
 
 deserialise _ self (Node "Cdr" [e]) env = do
-  Dynamic t d <- self e env
-  AsList _ arrCast <- return $ unTypQ t
-  (ta, equTab) <- maybeToEither ("type is not a list: " ++ show t) arrCast
-  let df = eqCast equTab d
-  return $ Dynamic (tlist ta) (cdr df)
+  Dyn t d <- self e env
+  case t of
+    App tc ta -> do
+      case (typeRep @Type `eqTypeRep` typeRepKind t, tc `eqTypeRep` typeRep @[]) of
+        (Just HRefl, Just HRefl) -> return $ Dyn (App (typeRep @[]) ta) (cdr d)
+        _ -> Left $ "Expected type: [" ++ show ta ++ "]. Found type: " ++ show t
+    _ -> Left $ "Expected type: [a]. Found type: " ++ show t
 deserialise _ _ (Node "Cdr" es) _ = Left $ "Invalid number of arguments, expected 1, found " ++ show (length es)
 
 deserialise old self e env = old self e env

@@ -1,4 +1,8 @@
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE GADTs #-}
 module Vyom.Term.UnitSym where
+
+import Data.Kind (Type)
 
 import Vyom
 import Util (safeRead)
@@ -18,7 +22,7 @@ instance UnitSym Expr where
 
 deserialise :: UnitSym r => ExtensibleDeserialiser r
 deserialise _ _ (Node "()" [Leaf s]) _
-  | Just "()" <- safeRead s = return $ Dynamic tunit unit
+  | Just "()" <- safeRead s = return $ Dyn (typeRep @()) unit
   | otherwise = Left $ "Bad unit literal " ++ s
 deserialise _ _ (Node "()" es) _ = Left $ "Invalid number of arguments, expected 1, found " ++ show (length es)
 

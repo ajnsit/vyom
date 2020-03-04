@@ -1,5 +1,9 @@
 {-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE GADTs #-}
 module Vyom.Term.TupleSym where
+
+import Data.Kind (Type)
 
 import Vyom
 
@@ -8,7 +12,6 @@ class TupleSym r where
   tuple :: r h a -> r h b -> r h (a,b)
   first :: r h (a,b) -> r h a
   second :: r h (a,b) -> r h b
-  -- TODO: Add more tuple ops
 
 instance TupleSym Run where
   tuple = rop2 (,)
@@ -27,27 +30,30 @@ instance TupleSym Expr where
 
 deserialise :: TupleSym r => ExtensibleDeserialiser r
 deserialise _ self (Node "Tuple" [e1, e2]) env = do
-  Dynamic t1 d1 <- self e1 env
-  Dynamic t2 d2 <- self e2 env
-  return $ Dynamic (ttuple t1 t2) (tuple d1 d2)
+  Dyn t1 d1 <- self e1 env
+  Dyn t2 d2 <- self e2 env
+  return $ Dyn (App (App (typeRep @(,)) t1) t2) (tuple d1 d2)
 deserialise _ _ (Node "Tuple" es) _ = Left $ "Invalid number of arguments, expected 2, found " ++ show (length es)
 
 deserialise _ self (Node "First" [e]) env = do
-  Dynamic t d <- self e env
-  AsTuple _ arrCast <- return $ unTypQ t
-  let errarr = fail $ "operator type is not a tuple: " ++ show t
-  (ta,_,equTab) <- maybe errarr return arrCast
-  let df = eqCast equTab d
-  return $ Dynamic ta $ first df
+  Dyn t d <- self e env
+  case t of
+    App (App tc ta) tb -> do
+      case (typeRep @Type `eqTypeRep` typeRepKind t, tc `eqTypeRep` typeRep @(,)) of
+        (Just HRefl, Just HRefl) -> return $ Dyn ta (first d)
+        _ -> Left $ "Expected type: (" ++ show ta ++ "," ++ show tb ++ "). Found type: " ++ show t
+    _ -> Left $ "Expected type: (a,b). Found type: " ++ show t
 deserialise _ _ (Node "First" es) _ = Left $ "Invalid number of arguments, expected 2, found " ++ show (length es)
 
 deserialise _ self (Node "Second" [e]) env = do
-  Dynamic t d <- self e env
-  AsTuple _ arrCast <- return $ unTypQ t
-  let errarr = fail $ "operator type is not a tuple: " ++ show t
-  (_,tb,equTab) <- maybe errarr return arrCast
-  let df = eqCast equTab d
-  return $ Dynamic tb $ second df
+  Dyn t d <- self e env
+  case t of
+    App (App tc ta) tb -> do
+      case (typeRep @Type `eqTypeRep` typeRepKind t, tc `eqTypeRep` typeRep @(,)) of
+        (Just HRefl, Just HRefl) -> return $ Dyn tb (second d)
+        _ -> Left $ "Expected type: (" ++ show ta ++ "," ++ show tb ++ "). Found type: " ++ show t
+    _ -> Left $ "Expected type: (a,b). Found type: " ++ show t
 deserialise _ _ (Node "Second" es) _ = Left $ "Invalid number of arguments, expected 2, found " ++ show (length es)
 
 deserialise old self e env = old self e env
+

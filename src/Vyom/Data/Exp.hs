@@ -3,6 +3,7 @@ module Vyom.Data.Exp where
 
 import Data.Binary
 import GHC.Generics (Generic)
+import Vyom.Data.ErrorOr (ErrorOr)
 
 -- Extensible Untyped Serialisation format
 data ExprU
@@ -11,8 +12,17 @@ data ExprU
   deriving (Eq, Read, Show, Generic)
 instance Binary ExprU
 
+-- Things which can be encoded/decoded from ExprU
+class Serialise a where
+  encode :: a -> ExprU
+  decode :: ExprU -> ErrorOr a
+
 -- Extensible Typed Serialisation format
 newtype Expr h a = Expr { serialise :: ExprU }
+
+instance Serialise (Expr h a) where
+  encode = serialise
+  decode = Right . Expr
 
 -- UTILITY
 -- Basic ops for Expr

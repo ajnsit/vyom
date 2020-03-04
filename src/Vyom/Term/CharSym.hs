@@ -1,4 +1,5 @@
-{-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE TypeApplications #-}
 module Vyom.Term.CharSym where
 
 import Vyom
@@ -18,11 +19,21 @@ instance CharSym Pretty where
 instance CharSym Expr where
   char = eop0 "Char"
 
-
 deserialise :: CharSym r => ExtensibleDeserialiser r
 deserialise _ _ (Node "Char" [Leaf s]) _
-  | Just s' <- safeRead s = return $ Dynamic tchar $ char s'
+  | Just s' <- safeRead s = return $ Dyn typeRep $ char s'
   | otherwise = Left $ "Bad char literal " ++ s
 deserialise _ _ (Node "Char" es) _ = Left $ "Invalid number of arguments, expected 1, found " ++ show (length es)
 
 deserialise old self e env = old self e env
+
+-- Private
+getChar
+  :: (exp -> env -> Either [Char] (Dyn r))
+  -> exp -> env -> Either [Char] (r Char)
+getChar deser e env = do
+  c@(Dyn t d) <- deser e env
+  case t `eqTypeRep` (typeRep @Char) of
+    Just HRefl -> return d
+    _ -> Left $ "invalid type of argument, expected Char, found " <> show t
+

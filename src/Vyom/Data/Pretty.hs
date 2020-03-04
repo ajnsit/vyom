@@ -23,3 +23,4 @@ sop3 o1 o2 o3 a b c = Pretty $ \i -> "(" ++ o1 ++ " " ++ unPretty a i ++ " " ++ 
 -- Prettyprint something
 pretty :: Pretty h a -> String
 pretty e = unPretty e 0
+

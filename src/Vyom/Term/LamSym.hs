@@ -1,12 +1,15 @@
 {-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE RankNTypes, TypeFamilies, MultiParamTypeClasses, FlexibleInstances #-}
 module Vyom.Term.LamSym where
 
--- TODO: This implementation is a mess! Make it more generic.
+import Data.Kind (Type)
 
 import Vyom
+import Vyom.Data.TypeRep
 
--- Lambdas with (runtime) environments
+-- Lambdas with tuple runtime environments
 class LamSym r where
   -- TODO: Rename s and z to something longer
   z   :: r (a,h) a
@@ -14,18 +17,15 @@ class LamSym r where
   -- Need to pass the type of elements, because we don't have type inference
   -- Hence lam needs to know the type of the var to allow type checking
   -- TODO: Implement type inference
-  lam :: TypQ a -> r (a,h) b -> r h (a -> b)
+  lam :: TypeRep a -> r (a,h) b -> r h (a -> b)
 
-lambda :: (LamSym r, SupportedType a) => r (a,h) b -> r h (a -> b)
-lambda body = lam (argt body) body
-  where
-    argt :: SupportedType a => r (a,h) b -> TypQ a
-    argt _ = typrep
+lambda :: (LamSym r, Typeable a) => r (a,h) b -> r h (a -> b)
+lambda body = lam typeRep body
 
 -- Helpful synonyms
 -- infixr 0 #\
-(#\) :: (LamSym r, SupportedType a) => r (a,h) b -> r h (a -> b)
-(#\) = lambda
+(#\) :: forall r h a b. Typeable a => LamSym r => r (a,h) b -> r h (a -> b)
+(#\) = lam (typeRep @a)
 v0 :: LamSym r => r (a,h) a
 v0 = z
 v1 :: LamSym r => r (any,(a,h)) a
@@ -50,42 +50,22 @@ instance LamSym Pretty where
 instance LamSym Expr where
   z = Expr $ Node "Z" []
   s v = Expr $ Node "S" [serialise v]
-  lam t e = Expr $ Node "Lam" [Leaf "dummy", typToExp (Typ t), serialise e]
-
--- EXPERIMENTAL --
--- Create an ExprU with a varname
-var :: String -> Expr h a
-var name = Expr $ Node "Var" [Leaf name]
-
--- Create an ExprU with a named function
--- The body should use `var` to refer to named variables
-namedLam :: String -> TypQ a -> Expr (a,h) b -> Expr h (a -> b)
-namedLam name typ body = Expr $ Node "Lam" [Leaf name, typToExp (Typ typ), serialise body]
--- END EXPERIMENTAL --
-
+  lam t e = Expr $ Node "Lam" [Leaf "anonymous", serialiseTypeRep t, serialise e]
 
 -- Instance computations for tuples
 instance LamSym r => Var r () where
   type RT () = ()
-  findvar name _ = Left $ "Unbound variable: " ++ show name
   mkvarz _ = Left "Unbound variable"
-  mkvars self () = self ()
+  mkvars getter _ = getter ()
 
-instance (LamSym r, Var r env) => Var r (VarDesc t, env) where
-  type RT (VarDesc t, env) = (t, RT env)
+instance (LamSym r, Var r e) => Var r (TypeRep a, e) where
+  type RT (TypeRep a, e) = (a, RT e)
 
-  findvar name (VarDesc tr name', _) | name == name' = return $ Dynamic tr z
+  mkvarz (tr, _) = return $ Dyn tr z
 
-  findvar name (_,env) = do
-    Dynamic tr v <- findvar name env
-    return $ Dynamic tr (s v)
-
-  mkvarz (VarDesc tr _, _) = return $ Dynamic tr z
-
-  mkvars self (_, env) = do
-    Dynamic t d <- self env
-    return $ Dynamic t (s d)
-
+  mkvars getter (_, env) = do
+    Dyn t d <- getter env
+    return $ Dyn t (s d)
 
 deserialise :: LamSym r => ExtensibleDeserialiser r
 
@@ -95,13 +75,20 @@ deserialise _ _ (Node "Z" es) _ = Left $ "Invalid number of arguments, expected 
 deserialise _ self (Node "S" [e1]) env = mkvars (self e1) env
 deserialise _ _ (Node "S" es) _ = Left $ "Invalid number of arguments, expected 1, found " ++ show (length es)
 
-deserialise _ _ (Node "Var" [Leaf name]) env = findvar name env
-deserialise _ _ (Node "Var" es) _ = Left $ "Invalid number of arguments, expected 1, found " ++ show (length es)
+deserialise _ self (Node "Lam" [Leaf _, t1, e1]) env = do
+  -- e1 *should be* a term that expects an env of (a,env)
+  -- Our deserialiser function needs to know the type of the environment
+  -- But we have been provided an env of env
+  -- So we need to figure out typerep a
+  -- TODO: Currently there is no way to type infer `a` from the body
+  SomeTypeRep rep <- decode t1
+  case typeRep @Type `eqTypeRep` typeRepKind rep of
+    Just HRefl -> do
+      Dyn tbody body <- self e1 (rep, env)
+      return $ Dyn (Fun rep tbody) (lam rep body)
+    Nothing -> Left $ "Invalid type"
 
-deserialise _ self (Node "Lam" [Leaf _, t, e1]) env = do
-  Typ ta <- expToTyp t
-  Dynamic tbody body <- self e1 (VarDesc ta "dummy", env)
-  return $ Dynamic (tarr ta tbody) (lam ta body)
 deserialise _ _ (Node "Lam" es) _ = Left $ "Invalid number of arguments, expected 3, found " ++ show (length es)
 
 deserialise old self e env = old self e env
+

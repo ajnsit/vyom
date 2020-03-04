@@ -1,3 +1,5 @@
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE TypeApplications #-}
 module Vyom.Term.CondSym where
 
 import Vyom
@@ -20,17 +22,16 @@ instance CondSym Pretty where
 instance CondSym Expr where
   cond = eop3 "Cond"
 
-
 deserialise :: CondSym r => ExtensibleDeserialiser r
 deserialise _ self (Node "Cond" [e1, e2, e3]) env = do
-  db <- self e1 env
-  b <- unpackBool db
-  Dynamic t1 d1 <- self e2 env
-  Dynamic t2 d2 <- self e3 env
-  d1' <- maybeToEither ("Could not unify type: " ++ show t2 ++ " with type: " ++ show t1) $ gcast t1 t2 d1
-  return $ Dynamic t2 (cond b d1' d2)
-  where
-    unpackBool b@(Dynamic t _) = maybeToEither ("Invalid type of argument, expected Bool, found " ++ show t) $ asBool b
-deserialise _ _ (Node "Cond" es) _ = Left $ "Invalid number of arguments, expected 3, found " ++ show (length es)
+  b <- getVal @Bool self e1 env
+  Dyn t1 d1 <- self e2 env
+  Dyn t2 d2 <- self e3 env
+  case t1 `eqTypeRep` t2 of
+    Just HRefl -> return $ Dyn t1 $ cond b d1 d2
+    _ -> Left $ "Could not unify type: " <> show t2 <> " with type: " <> show t1
+
+deserialise _ _ (Node "Cond" es) _ = Left $ "Invalid number of arguments, expected 3, found " <> show (length es)
 
 deserialise old self e env = old self e env
+

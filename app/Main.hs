@@ -1,4 +1,4 @@
-{-# LANGUAGE RankNTypes, ScopedTypeVariables #-}
+{-# LANGUAGE RankNTypes, ScopedTypeVariables, TypeApplications #-}
 module Main where
 
 import Vyom
@@ -7,6 +7,9 @@ import DSL
 main :: IO ()
 main = test tint (sample $ sumInts #$ ints)
 
+tint :: TypeRep Int
+tint = typeRep
+
 -- A simple test
 -- take a DSL term
 -- eval and print it
@@ -14,7 +17,7 @@ main = test tint (sample $ sumInts #$ ints)
 -- deserialise exp to get the term back
 -- eval and print the new term
 
-test :: forall a. Show a => TypQ a -> DSL () a -> IO ()
+test :: forall a. Show a => TypeRep a -> DSL () a -> IO ()
 test typ term = do
   putStrLn $ "Input value: " ++ pretty term
   putStrLn $ "Result: " ++ show (run term ())
@@ -26,7 +29,7 @@ test typ term = do
     readTerm = roundTrip typ term
 
 -- Test round trip serialise and deserialise
-roundTrip :: TypQ a -> DSL () a -> DSL () a
+roundTrip :: TypeRep a -> DSL () a -> DSL () a
 roundTrip typ term = case deserialise typ () (serialise term) of
   Left err -> error err
   Right term' -> term'

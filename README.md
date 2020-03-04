@@ -90,6 +90,5 @@ Look at the included [sample application](app/) for information on how to use th
 
 ## TODO
 
-1. The type system is currently work in progress and non-extensible. It does provide enough power to implement all example constructs, but there are plans to make it completely generic.
-2. There is no type inference (only type checking). It may be implemented in the future.
-3. Currently only Rank0 types are supported. Rank1 types are currently under implementation. Higher ranked types may be supported in the future.
+1. There is no type inference (only type checking). It may be implemented in the future.
+2. Currently only Rank0 types are supported. Rank1 types are currently under implementation. Higher ranked types may be supported in the future.

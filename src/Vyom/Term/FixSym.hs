@@ -1,6 +1,3 @@
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE GADTs #-}
 module Vyom.Term.FixSym where
 
 import Vyom

@@ -1,6 +1,3 @@
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE TypeApplications #-}
 module Vyom.Term.AppSym where
 
 import Vyom

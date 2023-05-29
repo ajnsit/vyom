@@ -1,5 +1,3 @@
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE GADTs #-}
 module Vyom.Term.UnitSym where
 
 import Data.Kind (Type)

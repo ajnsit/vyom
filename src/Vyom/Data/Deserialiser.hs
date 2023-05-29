@@ -1,6 +1,3 @@
-{-# LANGUAGE RankNTypes, TypeFamilies, MultiParamTypeClasses, ScopedTypeVariables, FlexibleContexts #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE PolyKinds #-}
 module Vyom.Data.Deserialiser where
 
 -- import Vyom.Data.Typ
@@ -29,7 +26,7 @@ deserialiseWith es tqb env e = do
   Dyn tqa d <- go e env
   case tqa `eqTypeRep` tqb of
     Just HRefl -> return d
-    _ -> fail "Invalid types"
+    _ -> error "Invalid types"
   where
     go :: DynDeserialiser r
     go = go' es go
@@ -41,7 +38,7 @@ deserialiseWith es tqb env e = do
 -- Private --------------------------------------------------------------------
 -- Fallback
 noRead :: CPSDeserialiser r
-noRead _ e _ = fail $ "Malformed Expression: " ++ show e
+noRead _ e _ = error $ "Malformed Expression: " ++ show e
 
 type DynDeserialiser r = forall e. Var r e => ExprU -> e -> ErrorOr (Dyn (r (RT e)))
 type CPSDeserialiser r = DynDeserialiser r -> DynDeserialiser r

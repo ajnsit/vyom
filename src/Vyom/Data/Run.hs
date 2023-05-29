@@ -1,4 +1,3 @@
-{-# LANGUAGE GADTs, RankNTypes #-}
 module Vyom.Data.Run where
 
 -- Runtime representation for values -

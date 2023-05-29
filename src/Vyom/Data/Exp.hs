@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveGeneric #-}
 module Vyom.Data.Exp where
 
 import Data.Binary

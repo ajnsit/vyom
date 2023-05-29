@@ -1,4 +1,3 @@
-{-# LANGUAGE GADTs, RankNTypes #-}
 module Vyom.Data.Pretty where
 
 newtype Pretty h a = Pretty { unPretty :: Int -> String }

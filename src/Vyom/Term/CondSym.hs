@@ -1,5 +1,3 @@
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE TypeApplications #-}
 module Vyom.Term.CondSym where
 
 import Vyom

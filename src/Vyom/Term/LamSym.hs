@@ -1,7 +1,3 @@
-{-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE RankNTypes, TypeFamilies, MultiParamTypeClasses, FlexibleInstances #-}
 module Vyom.Term.LamSym where
 
 import Data.Kind (Type)
@@ -58,7 +54,7 @@ instance LamSym r => Var r () where
   mkvarz _ = Left "Unbound variable"
   mkvars getter _ = getter ()
 
-instance (LamSym r, Var r e) => Var r (TypeRep a, e) where
+instance (LamSym r, Var r e) => Var r (TypeRep (a :: Type), e) where
   type RT (TypeRep a, e) = (a, RT e)
 
   mkvarz (tr, _) = return $ Dyn tr z

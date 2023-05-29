@@ -1,6 +1,3 @@
-{-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE GADTs #-}
 module Vyom.Term.TupleSym where
 
 import Data.Kind (Type)

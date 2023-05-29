@@ -1,8 +1,3 @@
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE KindSignatures #-}
-
 module Vyom.Data.Dyn where
 
 import Type.Reflection

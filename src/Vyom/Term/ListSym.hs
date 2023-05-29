@@ -1,6 +1,3 @@
-{-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE GADTs #-}
 module Vyom.Term.ListSym where
 
 import Data.Kind (Type)

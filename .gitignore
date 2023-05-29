@@ -32,3 +32,4 @@ dist-stack
 TAGS
 /.stack.yaml.swp
 /stack.yaml.lock
+dist-newstyle
